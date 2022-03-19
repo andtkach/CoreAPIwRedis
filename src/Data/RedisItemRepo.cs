@@ -4,56 +4,59 @@ using StackExchange.Redis;
 
 namespace CacheService.Data
 {
-    public class RedisPlatformRepo : IPlatformRepo
+    public class RedisItemRepo : IItemRepo
     {
         private readonly IConnectionMultiplexer _redis;
+        private readonly string _nameSet = "Items";
 
-        public RedisPlatformRepo(IConnectionMultiplexer redis)
+        public RedisItemRepo(IConnectionMultiplexer redis)
         {
             _redis = redis;
         }
 
-        public void CreatePlatform(Platform plat)
+        public Item CreateItem(Item item)
         {
-            if (plat == null)
+            if (item == null)
             {
-                throw new ArgumentOutOfRangeException(nameof(plat));
+                throw new ArgumentException($"{nameof(item)} is null");
             }
 
             var db = _redis.GetDatabase();
 
-            var serialPlat = JsonSerializer.Serialize(plat);
+            var itemStr = JsonSerializer.Serialize(item);
 
-            //db.StringSet(plat.Id, serialPlat);
-            db.HashSet($"hashplatform", new HashEntry[] 
-                {new HashEntry(plat.Id, serialPlat)});
+            db.HashSet(this._nameSet, new HashEntry[]
+            {
+                new HashEntry(item.Id, itemStr)
+            });
+
+            return item;
         }
 
-        public Platform? GetPlatformById(string id)
+        public Item? GetItemById(string id)
         {
             var db = _redis.GetDatabase();
 
-            //var plat = db.StringGet(id);
+            var itemStr = db.HashGet(this._nameSet, $"{Item.Name}{Item.S}{id}");
 
-            var plat = db.HashGet("hashplatform", id);
-
-            if (!string.IsNullOrEmpty(plat))
+            if (!string.IsNullOrEmpty(itemStr))
             {
-                return JsonSerializer.Deserialize<Platform>(plat);
+                return JsonSerializer.Deserialize<Item>(itemStr);
             }
+            
             return null;
         }
 
-        public IEnumerable<Platform?>? GetAllPlatforms()
+        public IEnumerable<Item?>? GetAllItems()
         {
             var db = _redis.GetDatabase();
 
-            var completeSet = db.HashGetAll("hashplatform");
+            var completeSet = db.HashGetAll(this._nameSet);
             
             if (completeSet.Length > 0)
             {
                 var obj = Array.ConvertAll(completeSet, val => 
-                    JsonSerializer.Deserialize<Platform>(val.Value)).ToList();
+                    JsonSerializer.Deserialize<Item>(val.Value)).ToList();
                 return obj;   
             }
             

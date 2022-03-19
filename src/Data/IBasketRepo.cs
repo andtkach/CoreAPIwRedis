@@ -2,10 +2,9 @@ using CacheService.Models;
 
 namespace CacheService.Data
 {
-    public interface IPlatformRepo
+    public interface IBasketRepo
     {
-        void CreatePlatform(Platform plat);
-        Platform? GetPlatformById(string id);
-        IEnumerable<Platform?>? GetAllPlatforms();
+        string Set(string value);
+        Item? Get(string id);
     }
 }

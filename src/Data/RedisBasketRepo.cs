@@ -4,57 +4,42 @@ using StackExchange.Redis;
 
 namespace CacheService.Data
 {
-    public class RedisPlatformRepo : IPlatformRepo
+    public class RedisBasketRepo : IBasketRepo
     {
         private readonly IConnectionMultiplexer _redis;
 
-        public RedisPlatformRepo(IConnectionMultiplexer redis)
+        public RedisBasketRepo(IConnectionMultiplexer redis)
         {
             _redis = redis;
         }
 
-        public void CreatePlatform(Platform plat)
+        public string Set(string value)
         {
-            if (plat == null)
+            var item = new Item()
             {
-                throw new ArgumentOutOfRangeException(nameof(plat));
-            }
-
-            var db = _redis.GetDatabase();
-
-            var serialPlat = JsonSerializer.Serialize(plat);
-
-            //db.StringSet(plat.Id, serialPlat);
-            db.HashSet($"hashplatform", new HashEntry[] 
-                {new HashEntry(plat.Id, serialPlat)});
-        }
-
-        public Platform? GetPlatformById(string id)
-        {
-            var db = _redis.GetDatabase();
-
-            //var plat = db.StringGet(id);
-
-            var plat = db.HashGet("hashplatform", id);
-
-            if (!string.IsNullOrEmpty(plat))
-            {
-                return JsonSerializer.Deserialize<Platform>(plat);
-            }
-            return null;
-        }
-
-        public IEnumerable<Platform?>? GetAllPlatforms()
-        {
-            var db = _redis.GetDatabase();
-
-            var completeSet = db.HashGetAll("hashplatform");
+                Value = value
+            };
             
-            if (completeSet.Length > 0)
+            if (item == null)
             {
-                var obj = Array.ConvertAll(completeSet, val => 
-                    JsonSerializer.Deserialize<Platform>(val.Value)).ToList();
-                return obj;   
+                throw new ArgumentException($"{nameof(item)} is null");
+            }
+
+            var db = _redis.GetDatabase();
+            var itemStr = JsonSerializer.Serialize(item);
+            db.StringSet(item.Id, itemStr, TimeSpan.FromMinutes(1));
+            return item.GetId();
+        }
+
+        public Item? Get(string id)
+        {
+            var db = _redis.GetDatabase();
+
+            var itemStr = db.StringGet($"{Item.Name}{Item.S}{id}");
+
+            if (!string.IsNullOrEmpty(itemStr))
+            {
+                return JsonSerializer.Deserialize<Item>(itemStr);
             }
             
             return null;

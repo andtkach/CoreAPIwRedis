@@ -2,10 +2,10 @@ using CacheService.Models;
 
 namespace CacheService.Data
 {
-    public interface IPlatformRepo
+    public interface IItemRepo
     {
-        void CreatePlatform(Platform plat);
-        Platform? GetPlatformById(string id);
-        IEnumerable<Platform?>? GetAllPlatforms();
+        Item CreateItem(Item item);
+        Item? GetItemById(string id);
+        IEnumerable<Item?>? GetAllItems();
     }
 }

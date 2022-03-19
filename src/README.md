@@ -4,9 +4,9 @@
 
 
 # Docker
-docker ps
-docker compose up
-docker compose up -d
-docker compose stop
-docker compose down
-docker exec -it CONTAINERID /bin/bash
+1. docker ps
+2. docker compose up (or docker-compose up)
+3. docker compose up -d
+4. docker compose stop
+5. docker compose down
+6. docker exec -it CONTAINERID /bin/bash

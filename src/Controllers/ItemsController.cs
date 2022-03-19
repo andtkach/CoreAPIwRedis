@@ -1,4 +1,5 @@
 using CacheService.Data;
+using CacheService.Dto;
 using CacheService.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,41 +7,75 @@ namespace CacheService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PlatformsController : ControllerBase
+    public class ItemsController : ControllerBase
     {
-        private readonly IPlatformRepo _repository;
+        private readonly IItemRepo _repository;
 
-        public PlatformsController(IPlatformRepo repository)
+        public ItemsController(IItemRepo repository)
         {
             _repository = repository;
         }
 
+        DELETE
+            UPDATE (replce)
+        ASYNC
+        
         [HttpGet]
-        public ActionResult<IEnumerable<Platform>> GetPlatforms()
+        public ActionResult<IEnumerable<Item>> GetItems()
         {
-            return Ok(_repository.GetAllPlatforms());
+            var allItems = _repository.GetAllItems();
+            
+            if (allItems == null) return NotFound();
+            
+            var result = new List<ItemDto>();
+            foreach (var item in allItems.ToList())
+            {
+                if (item != null)
+                    result.Add(new ItemDto()
+                    {
+                        Id = item.GetId(),
+                        Value = item.Value
+                    });
+            }
+
+            return Ok(result);
         }
 
-        [HttpGet("{id}", Name="GetPlatformById")]
-        public ActionResult<IEnumerable<Platform>> GetPlatformById(string id)
+        [HttpGet("{id}", Name="GetItemById")]
+        public ActionResult<ItemDto> GetItemById(string id)
         {
+            var item = _repository.GetItemById(id);
             
-            var platform = _repository.GetPlatformById(id);
-            
-            if (platform != null)
+            if (item != null)
             {
-                return Ok(platform);
+                return Ok(new ItemDto()
+                {
+                    Id = item.GetId(),
+                    Value = item.Value
+                });
             }
 
             return NotFound();
         }
 
         [HttpPost]
-        public ActionResult <Platform> CreatePlatform(Platform platform)
+        public ActionResult<ItemDto> CreateItem(ItemToCreateDto? itemToCreate)
         {
-            _repository.CreatePlatform(platform);
+            if (itemToCreate == null)
+            {
+                return BadRequest();
+            }
 
-            return CreatedAtRoute(nameof(GetPlatformById), new {Id = platform.Id}, platform);
+            var newItem = _repository.CreateItem(new Item()
+            {
+                Value = itemToCreate.Value
+            });
+
+            return CreatedAtRoute(nameof(GetItemById), new {Id = newItem.GetId()}, new ItemDto()
+            {
+                Id = newItem.GetId(),
+                Value = newItem.Value
+            });
         }
     }
 }

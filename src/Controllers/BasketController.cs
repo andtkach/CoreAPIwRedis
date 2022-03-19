@@ -1,4 +1,5 @@
 using CacheService.Data;
+using CacheService.Dto;
 using CacheService.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,41 +7,46 @@ namespace CacheService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PlatformsController : ControllerBase
+    public class BasketController : ControllerBase
     {
-        private readonly IPlatformRepo _repository;
+        private readonly IBasketRepo _repository;
 
-        public PlatformsController(IPlatformRepo repository)
+        public BasketController(IBasketRepo repository)
         {
             _repository = repository;
         }
 
-        [HttpGet]
-        public ActionResult<IEnumerable<Platform>> GetPlatforms()
+        [HttpGet("{id}", Name="GetItem")]
+        public ActionResult<ItemDto> GetItem(string id)
         {
-            return Ok(_repository.GetAllPlatforms());
-        }
-
-        [HttpGet("{id}", Name="GetPlatformById")]
-        public ActionResult<IEnumerable<Platform>> GetPlatformById(string id)
-        {
-            
-            var platform = _repository.GetPlatformById(id);
-            
-            if (platform != null)
+            var item = _repository.Get(id);
+            if (item != null)
             {
-                return Ok(platform);
+                return Ok(new ItemDto()
+                {
+                    Id = item.GetId(),
+                    Value = item.Value
+                });
             }
 
             return NotFound();
         }
 
         [HttpPost]
-        public ActionResult <Platform> CreatePlatform(Platform platform)
+        public ActionResult<Item> SetItem(ItemToCreateDto? itemToCreate)
         {
-            _repository.CreatePlatform(platform);
+            if (itemToCreate == null)
+            {
+                return BadRequest();
+            }
 
-            return CreatedAtRoute(nameof(GetPlatformById), new {Id = platform.Id}, platform);
+            var id = _repository.Set(itemToCreate.Value);
+            return CreatedAtRoute(nameof(GetItem), new {Id = id}, 
+                new ItemDto
+                {
+                    Id = id,
+                    Value = itemToCreate.Value
+                });
         }
     }
 }
