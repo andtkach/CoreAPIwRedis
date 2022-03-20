@@ -14,7 +14,7 @@ namespace CacheService.Data
             _redis = redis;
         }
 
-        public Item CreateItem(Item item)
+        public async Task<Item> CreateItem(Item item)
         {
             if (item == null)
             {
@@ -25,7 +25,7 @@ namespace CacheService.Data
 
             var itemStr = JsonSerializer.Serialize(item);
 
-            db.HashSet(this._nameSet, new HashEntry[]
+            await db.HashSetAsync(this._nameSet, new HashEntry[]
             {
                 new HashEntry(item.Id, itemStr)
             });
@@ -33,11 +33,11 @@ namespace CacheService.Data
             return item;
         }
 
-        public Item? GetItemById(string id)
+        public async Task<Item?> GetItemById(string id)
         {
             var db = _redis.GetDatabase();
 
-            var itemStr = db.HashGet(this._nameSet, $"{Item.Name}{Item.S}{id}");
+            var itemStr = await db.HashGetAsync(this._nameSet, $"{Item.Name}{Item.S}{id}");
 
             if (!string.IsNullOrEmpty(itemStr))
             {
@@ -47,11 +47,11 @@ namespace CacheService.Data
             return null;
         }
 
-        public IEnumerable<Item?>? GetAllItems()
+        public async Task<IEnumerable<Item?>?> GetAllItems()
         {
             var db = _redis.GetDatabase();
 
-            var completeSet = db.HashGetAll(this._nameSet);
+            var completeSet = await db.HashGetAllAsync(this._nameSet);
             
             if (completeSet.Length > 0)
             {
@@ -61,6 +61,39 @@ namespace CacheService.Data
             }
             
             return null;
+        }
+
+        public async Task<Item?> UpdateItem(Item item)
+        {
+            if (item == null)
+            {
+                throw new ArgumentException($"{nameof(item)} is null");
+            }
+            
+            var db = _redis.GetDatabase();
+            item.Id = $"{Item.Name}{Item.S}{item.Id}";
+            
+            var existingItemStr = await db.HashGetAsync(this._nameSet, item.Id);
+
+            if (string.IsNullOrEmpty(existingItemStr))
+            {
+                return null;
+            }
+            
+            await db.HashDeleteAsync(this._nameSet, item.Id);
+            var itemStr = JsonSerializer.Serialize(item);
+            await db.HashSetAsync(this._nameSet, new HashEntry[]
+            {
+                new HashEntry(item.Id, itemStr)
+            });
+
+            return item;
+        }
+
+        public async Task DeleteItem(string id)
+        {
+            var db = _redis.GetDatabase();
+            await db.HashDeleteAsync(this._nameSet, $"{Item.Name}{Item.S}{id}");
         }
     }
 }

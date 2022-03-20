@@ -13,7 +13,7 @@ namespace CacheService.Data
             _redis = redis;
         }
 
-        public string Set(string value)
+        public async Task<string> Set(string value)
         {
             var item = new Item()
             {
@@ -24,18 +24,18 @@ namespace CacheService.Data
             {
                 throw new ArgumentException($"{nameof(item)} is null");
             }
-
+            
             var db = _redis.GetDatabase();
             var itemStr = JsonSerializer.Serialize(item);
-            db.StringSet(item.Id, itemStr, TimeSpan.FromMinutes(1));
+            await db.StringSetAsync(item.Id, itemStr, TimeSpan.FromMinutes(1));
             return item.GetId();
         }
 
-        public Item? Get(string id)
+        public async Task<Item?> Get(string id)
         {
             var db = _redis.GetDatabase();
 
-            var itemStr = db.StringGet($"{Item.Name}{Item.S}{id}");
+            var itemStr = await db.StringGetAsync($"{Item.Name}{Item.S}{id}");
 
             if (!string.IsNullOrEmpty(itemStr))
             {

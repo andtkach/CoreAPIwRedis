@@ -17,9 +17,9 @@ namespace CacheService.Controllers
         }
 
         [HttpGet("{id}", Name="GetItem")]
-        public ActionResult<ItemDto> GetItem(string id)
+        public async Task<ActionResult<ItemDto>> GetItem(string id)
         {
-            var item = _repository.Get(id);
+            var item = await _repository.Get(id);
             if (item != null)
             {
                 return Ok(new ItemDto()
@@ -33,14 +33,14 @@ namespace CacheService.Controllers
         }
 
         [HttpPost]
-        public ActionResult<Item> SetItem(ItemToCreateDto? itemToCreate)
+        public async Task<ActionResult<Item>> SetItem(ItemToCreateDto? itemToCreate)
         {
             if (itemToCreate == null)
             {
                 return BadRequest();
             }
 
-            var id = _repository.Set(itemToCreate.Value);
+            var id = await _repository.Set(itemToCreate.Value);
             return CreatedAtRoute(nameof(GetItem), new {Id = id}, 
                 new ItemDto
                 {

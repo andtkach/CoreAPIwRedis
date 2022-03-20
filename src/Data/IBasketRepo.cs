@@ -4,7 +4,7 @@ namespace CacheService.Data
 {
     public interface IBasketRepo
     {
-        string Set(string value);
-        Item? Get(string id);
+        Task<string> Set(string value);
+        Task<Item?> Get(string id);
     }
 }

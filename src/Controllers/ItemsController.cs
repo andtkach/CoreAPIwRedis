@@ -16,18 +16,17 @@ namespace CacheService.Controllers
             _repository = repository;
         }
 
-        DELETE
-            UPDATE (replce)
-        ASYNC
-        
         [HttpGet]
-        public ActionResult<IEnumerable<Item>> GetItems()
+        public async Task<ActionResult<IEnumerable<Item>>> GetItems()
         {
-            var allItems = _repository.GetAllItems();
-            
-            if (allItems == null) return NotFound();
-            
+            var allItems = await _repository.GetAllItems();
             var result = new List<ItemDto>();
+            
+            if (allItems == null)
+            {
+                return Ok(result);
+            }
+            
             foreach (var item in allItems.ToList())
             {
                 if (item != null)
@@ -42,9 +41,9 @@ namespace CacheService.Controllers
         }
 
         [HttpGet("{id}", Name="GetItemById")]
-        public ActionResult<ItemDto> GetItemById(string id)
+        public async Task<ActionResult<ItemDto>> GetItemById(string id)
         {
-            var item = _repository.GetItemById(id);
+            var item = await _repository.GetItemById(id);
             
             if (item != null)
             {
@@ -59,23 +58,49 @@ namespace CacheService.Controllers
         }
 
         [HttpPost]
-        public ActionResult<ItemDto> CreateItem(ItemToCreateDto? itemToCreate)
+        public async Task<ActionResult<ItemDto>> CreateItem(ItemToCreateDto? itemToCreate)
         {
             if (itemToCreate == null)
             {
                 return BadRequest();
             }
 
-            var newItem = _repository.CreateItem(new Item()
+            var newItem = await _repository.CreateItem(new Item()
             {
                 Value = itemToCreate.Value
             });
 
-            return CreatedAtRoute(nameof(GetItemById), new {Id = newItem.GetId()}, new ItemDto()
+            var id = newItem.GetId();
+
+            return CreatedAtRoute(nameof(GetItemById), new {Id = id}, new ItemDto()
             {
-                Id = newItem.GetId(),
+                Id = id,
                 Value = newItem.Value
             });
+        }
+        
+        [HttpPut]
+        public async Task<ActionResult<ItemDto>> UpdateItem(ItemToUpdateDto? itemToUpdate)
+        {
+            if (itemToUpdate == null)
+            {
+                return BadRequest();
+            }
+
+            await _repository.UpdateItem(new Item()
+            {
+                Id = itemToUpdate.Id,
+                Value = itemToUpdate.Value
+            });
+
+            return this.NoContent();
+        }
+        
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteItemById(string id)
+        {
+            await _repository.DeleteItem(id);
+            return this.NoContent();
         }
     }
 }
